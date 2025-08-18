@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Recommended Jobs</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #121212; color: white; text-align: center; }
+    h1 { color: #00ffcc; }
+    .job-card { background: #1e1e1e; margin: 15px auto; padding: 20px; width: 60%; border-radius: 10px; }
+    button { padding: 10px 20px; border: none; border-radius: 5px; background: #00ffcc; cursor: pointer; }
+    button:hover { background: #00ccaa; }
+  </style>
+</head>
+<body>
+  <h1>Recommended Jobs</h1>
+
+  {% if message %}
+    <p>{{ message }}</p>
+  {% endif %}
+
+  {% if skills %}
+    <p><b>Skills Found:</b> {{ skills }}</p>
+  {% endif %}
+
+  {% for job in jobs %}
+    <div class="job-card">
+      <h3>{{ job['title'] }}</h3>
+      <p><b>Company:</b> {{ job['company'] }}</p>
+      <p><b>Location:</b> {{ job['location'] }}</p>
+      <p><b>Skill Required:</b> {{ job['skills_required'] }}</p>
+      <p><b>Salary:</b> ${{ job['salary'] }}</p>
+      <a href="{{ url_for('apply', job_id=job['job_id']) }}"><button>Apply</button></a>
+    </div>
+  {% endfor %}
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Job Matcher</title>
+  <style>
+    body { background-color: #121212; color: #ffffff; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    header { background: linear-gradient(90deg, #6a11cb, #2575fc); padding: 20px; text-align: center; }
+    header h1 { margin: 0; font-size: 2rem; color: white; }
+    .container { padding: 30px; max-width: 1000px; margin: auto; }
+    form { margin-bottom: 30px; text-align: center; }
+    input[type="file"], input[type="text"] { padding: 10px; border: none; border-radius: 5px; background: #1f1f1f; color: white; cursor: pointer; }
+    button { margin-left: 10px; padding: 10px 15px; border: none; border-radius: 5px; background: #6200ea; color: white; font-size: 1rem; cursor: pointer; }
+    button:hover { background: #3700b3; }
+    .job-list { margin-top: 20px; }
+    .job-card { background: #1e1e1e; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: transform 0.2s; }
+    .job-card:hover { transform: scale(1.02); }
+    .job-title { font-size: 1.4rem; margin-bottom: 8px; color: #76c7ff; }
+    .company { font-weight: bold; margin-bottom: 5px; }
+    .details { font-size: 0.95rem; color: #bbb; }
+    .pagination { text-align: center; margin: 20px; }
+    .pagination a { color: white; margin: 0 5px; padding: 8px 12px; background: #333; border-radius: 5px; text-decoration: none; }
+    .pagination a.active { background: #6200ea; }
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
+    .modal-content { background-color: #1e1e1e; margin: 10% auto; padding: 20px; border-radius: 12px; width: 400px; color: white; }
+    .close { float: right; font-size: 1.5rem; cursor: pointer; }
+    .close:hover { color: red; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>AI Job Matcher</h1>
+</header>
+
+<div class="container">
+  <!-- Upload CV -->
+  <form method="POST" enctype="multipart/form-data">
+    <input type="file" name="cv" required>
+    <button type="submit">Upload & Match</button>
+  </form>
+
+  <!-- Search bar -->
+  {% if jobs is none or jobs.empty %}
+  <div style="text-align:center; margin-bottom:20px;">
+    <input type="text" id="searchBox" placeholder="Search jobs by title/company...">
+  </div>
+  {% endif %}
+
+  {% if job_title %}
+    <h2>Best Predicted Role for You:
+      <span style="color:#03dac6;">{{ job_title }}</span>
+    </h2>
+  {% endif %}
+
+  <!-- Recommended Jobs -->
+  {% if jobs is not none and not jobs.empty %}
+    <h2>Recommended Jobs</h2>
+    <div class="job-list">
+      {% for _, row in jobs.iterrows() %}
+        <div class="job-card">
+          <div class="job-title">{{ row['job_title'] }}</div>
+          <div class="company">{{ row['company_name'] }}</div>
+          <div class="details">
+            <b>Skill:</b> {{ row['skill_required'] }} <br>
+            <b>Location:</b> {{ row['location'] }} <br>
+            <b>Salary:</b> ${{ row['salary'] }}
+          </div>
+          <button onclick="openForm('{{ row['job_title'] }}','{{ row['company_name'] }}')">Apply</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- All Jobs (paginated) -->
+    <h2>All Jobs</h2>
+    <div class="job-list" id="allJobs">
+      {% for _, row in paginated_jobs.iterrows() %}
+        <div class="job-card">
+          <div class="job-title">{{ row['job_title'] }}</div>
+          <div class="company">{{ row['company_name'] }}</div>
+          <div class="details">
+            <b>Skill:</b> {{ row['skill_required'] }} <br>
+            <b>Location:</b> {{ row['location'] }} <br>
+            <b>Salary:</b> ${{ row['salary'] }}
+          </div>
+          <button onclick="openForm('{{ row['job_title'] }}','{{ row['company_name'] }}')">Apply</button>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      {% for p in range(1, total_pages+1) %}
+        <a href="/?page={{p}}" class="{% if p==page %}active{% endif %}">{{p}}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Apply Modal -->
+<div id="applyModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeForm()">&times;</span>
+    <h2>Apply for <span id="jobRole"></span> at <span id="jobCompany"></span></h2>
+    <form>
+      <label>Name:</label><br>
+      <input type="text" required><br><br>
+      <label>Email:</label><br>
+      <input type="email" required><br><br>
+      <label>Upload Resume:</label><br>
+      <input type="file" required><br><br>
+      <button type="submit">Submit Application</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Search filter
+  document.getElementById("searchBox")?.addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    let jobs = document.getElementById("allJobs").getElementsByClassName("job-card");
+    for (let i = 0; i < jobs.length; i++) {
+      let title = jobs[i].getElementsByClassName("job-title")[0].innerText.toLowerCase();
+      let company = jobs[i].getElementsByClassName("company")[0].innerText.toLowerCase();
+      jobs[i].style.display = (title.includes(filter) || company.includes(filter)) ? "" : "none";
+    }
+  });
+
+  // Apply modal
+  function openForm(title, company) {
+    document.getElementById("applyModal").style.display = "block";
+    document.getElementById("jobRole").innerText = title;
+    document.getElementById("jobCompany").innerText = company;
+  }
+  function closeForm() {
+    document.getElementById("applyModal").style.display = "none";
+  }
+</script>
+</body>
+</html>
