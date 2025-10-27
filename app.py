@@ -8,11 +8,9 @@ import math
 
 app = Flask(__name__)
 
-# Load jobs dataset
 jobs_df = pd.read_csv("jobs.csv")
 jobs_df.columns = jobs_df.columns.str.strip().str.lower()
 
-# Load ML model + encoders
 model = joblib.load("job_model.pkl")
 vectorizer = joblib.load("skills_vectorizer.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
@@ -38,12 +36,10 @@ def extract_skills(text):
 def home():
     jobs = None
     job_title = None
-
-    # Pagination setup
     page = int(request.args.get("page", 1))
     per_page = 20
     total_pages = math.ceil(len(jobs_df) / per_page)
-    paginated_jobs = jobs_df.iloc[(page-1)*per_page : page*per_page]
+    paginated_jobs = jobs_df.iloc[(page - 1) * per_page : page * per_page]
 
     if request.method == "POST":
         file = request.files.get("cv")
@@ -51,16 +47,13 @@ def home():
             file_path = os.path.join("uploads", file.filename)
             os.makedirs("uploads", exist_ok=True)
             file.save(file_path)
-
             text = extract_text_from_file(file_path)
             skills = extract_skills(text)
-
             if skills:
                 skills_text = " ".join(skills)
                 x_vec = vectorizer.transform([skills_text])
                 pred = model.predict(x_vec)
                 job_title = label_encoder.inverse_transform(pred)[0]
-
                 jobs = jobs_df[jobs_df["skill_required"].isin(skills)]
             else:
                 jobs = pd.DataFrame()
