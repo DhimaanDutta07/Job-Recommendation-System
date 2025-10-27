@@ -66,6 +66,3 @@ def home():
         page=page,
         total_pages=total_pages
     )
-
-if __name__ == "__main__":
-    app.run(debug=True)

@@ -1,0 +1,5 @@
+Flask
+pandas
+PyMuPDF
+python-docx
+joblib
